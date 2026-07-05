@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: macos-15
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -23,3 +25,9 @@ jobs:
         with:
           name: ld64-objc1
           path: ld64-objc1
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ld64-objc1
