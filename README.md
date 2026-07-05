@@ -12,7 +12,7 @@ Build script to compile `ld64` with fragile Objective-C runtime support.
 
 ### How to compile
 ```
-git clone <TBD/PATH>
+git clone https://github.com/theiphoneos1project/ld64-build
 cd ld64-build
 chmod +x ./build.sh
 ./build.sh
