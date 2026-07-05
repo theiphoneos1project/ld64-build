@@ -1,7 +1,7 @@
 name: Build ld64-objc1
 
 on:
-  workflow-dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
