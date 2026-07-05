@@ -1,8 +1,6 @@
 name: Build ld64-objc1
 
 on:
-  push:
-    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
