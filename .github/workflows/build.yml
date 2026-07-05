@@ -1,0 +1,25 @@
+name: Build ld64-objc1
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          chmod +x build.sh
+          ./build.sh --non-interactive
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ld64-objc1
+          path: ld64-objc1
