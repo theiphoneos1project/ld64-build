@@ -1,0 +1,48 @@
+diff --git a/src/ld/parsers/lto_file.cpp b/src/ld/parsers/lto_file.cpp
+index cfe0535..84762cc 100644
+--- a/src/ld/parsers/lto_file.cpp
++++ b/src/ld/parsers/lto_file.cpp
+@@ -1803,34 +1803,6 @@ const char* archName(const uint8_t* fileContent, uint64_t fileLength)
+ // rdar://15476167 ("typeTempLTO should not make it to final linked image" when building a freestanding target)
+ std::vector<std::string> softloadRuntimeSymbols(cpu_type_t arch)
+ {
+-	// TODO: rdar://15476167 ("typeTempLTO should not make it to final linked image" when building a freestanding target)
+-	// adding all the symbols leads to a negative size impact and undefined symbols in some projects
+-	bool useCompleteList;
+-#if SUPPORT_ARCH_riscv32
+-	useCompleteList = (arch == CPU_TYPE_RISCV32);
+-#else
+-	useCompleteList = false;
+-#endif
+-
+-	if ( useCompleteList && runtime_api_version() >= 25 ) {
+-		size_t  size = 0;
+-		const char* const* symbols = ::lto_runtime_lib_symbols_list(&size);
+-
+-		if ( size != 0 ) {
+-			std::vector<std::string> out;
+-
+-			for ( size_t i = 0; i < size; ++i ) {
+-				// some of the names might be empty as LLVM reserves slots for some functions
+-				// that can be configured dynamically depending on the target
+-				if ( symbols[i] == nullptr ) continue;
+-
+-				// lto returns symbol names without the leading underscore
+-				out.push_back(std::string("_") + symbols[i]);
+-			}
+-			return out;
+-		}
+-	}
+-
+ 	// fallback to a predefined (incomplete) list if libLTO didn't provide one
+ 	return std::vector<std::string>{ "___udivdi3", "___udivsi3", "___divsi3", "___muldi3",
+ 		"___gtdf2", "___ltdf2", "_memset", "_strcpy", "___sanitize_trap" };
+@@ -2034,8 +2006,6 @@ WRAP_LTO_SYMBOL(lto_bool_t, lto_codegen_set_pic_model,
+                 (lto_code_gen_t cg, lto_codegen_model model), (cg, model))
+ WRAP_LTO_SYMBOL(void, lto_codegen_add_must_preserve_symbol,
+                 (lto_code_gen_t cg, const char *symbol), (cg, symbol))
+-WRAP_LTO_SYMBOL(const char* const*, lto_runtime_lib_symbols_list,
+-                (size_t* sizeOut), (sizeOut))
+ 
+ #undef WRAP_LTO_SYMBOL
+ 

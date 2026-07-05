@@ -1,0 +1,50 @@
+diff --git a/src/ld/Options.cpp b/src/ld/Options.cpp
+index 4b3020d..a715965 100644
+--- a/src/ld/Options.cpp
++++ b/src/ld/Options.cpp
+@@ -36,7 +36,6 @@
+ #include <Availability.h>
+ #include <tapi/tapi.h>
+ #include <mach-o/dyld_priv.h>
+-#include <CoreAnalytics/CoreAnalytics.h>
+ 
+ #include <algorithm>
+ #include <vector>
+@@ -56,6 +55,12 @@
+ #define VAL(x) #x
+ #define STRINGIFY(x) VAL(x)
+ 
++#if defined(__has_include) && __has_include(<CrashReporterClient.h>) // ld64-port
++#define HAVE_CRASHREPORTER_HEADER 1
++#else
++#define HAVE_CRASHREPORTER_HEADER 0
++#endif
++
+ // upward dependency on lto::version()
+ namespace lto {
+ 	extern const char* version();
+@@ -66,7 +71,7 @@ namespace lto {
+ // magic to place command line in crash reports
+ const int crashreporterBufferSize = 2000;
+ static char crashreporterBuffer[crashreporterBufferSize];
+-#if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
++#if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 && HAVE_CRASHREPORTER_HEADER
+ 	#include <CrashReporterClient.h>
+ 	// hack until ld does not need to build on 10.6 anymore
+     struct crashreporter_annotations_t gCRAnnotations
+@@ -6943,6 +6948,7 @@ void Options::expandResponseFiles(int& argc, const char**& argv)
+ 
+ void Options::setupCrashReportInfo(int argc, const char* argv[])
+ {
++#if HAVE_CRASHREPORTER_HEADER
+ 	// build command line buffer in case ld crashes
+ 	CRSetCrashLogMessage(crashreporterBuffer);
+ 	const char* srcRoot = getenv("SRCROOT");
+@@ -6960,6 +6966,7 @@ void Options::setupCrashReportInfo(int argc, const char* argv[])
+ 		strlcat(crashreporterBuffer, argv[i], crashreporterBufferSize);
+ 		strlcat(crashreporterBuffer, " ", crashreporterBufferSize);
+ 	}
++#endif
+ }
+ 
+ // Note, returned string buffer is own by this function.

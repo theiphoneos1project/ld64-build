@@ -1,0 +1,83 @@
+diff --git a/src/ld/parsers/macho_relocatable_file.cpp b/src/ld/parsers/macho_relocatable_file.cpp
+index e30bdbc..fa07faf 100644
+--- a/src/ld/parsers/macho_relocatable_file.cpp
++++ b/src/ld/parsers/macho_relocatable_file.cpp
+@@ -8814,6 +8814,38 @@ bool ObjC1ClassSection<x86>::addRelocFixup(class Parser<x86>& parser, const mach
+ 	return FixedSizeSection<x86>::addRelocFixup(parser, reloc);
+ }
+ 
++template<>
++bool ObjC1ClassSection<arm>::addRelocFixup(class Parser<arm> &parser, const macho_relocation_info<P> *reloc) {
++	// if this is the reloc for the super class name string, add implicit reference to super class
++	if ( ((reloc->r_address() & R_SCATTERED) == 0) && (reloc->r_type() == ARM_RELOC_VANILLA) ) {
++		assert( reloc->r_length() == 2 );
++		assert( ! reloc->r_pcrel() );
++		
++		const macho_section<P>* sect = this->machoSection();
++		Parser<arm>::SourceLocation	src;
++		uint32_t srcAddr = sect->addr() + reloc->r_address();
++		src.atom = this->findAtomByAddress(srcAddr);
++		src.offsetInAtom = srcAddr - src.atom->objectAddress();
++		if ( src.offsetInAtom == 4 ) {
++			Parser<arm>::TargetDesc		stringTarget;
++			const uint8_t* fixUpPtr = file().fileContent() + sect->offset() + reloc->r_address();
++			uint32_t contentValue = LittleEndian::get32(*((uint32_t*)fixUpPtr));
++			parser.findTargetFromAddressAndSectionNum(contentValue, reloc->r_symbolnum(), stringTarget);
++			
++			assert(stringTarget.atom != NULL);
++			assert(stringTarget.atom->contentType() == ld::Atom::typeCString);
++			const char* superClassBaseName = (char*)stringTarget.atom->rawContentPointer();
++			
++			char* superClassName = new char[strlen(superClassBaseName) + 20];
++			strcpy(superClassName, ".objc_class_name_");
++			strcat(superClassName, superClassBaseName);
++			
++			parser.addFixup(src, ld::Fixup::k1of1, ld::Fixup::kindSetTargetAddress, false, superClassName);
++		}
++	}
++	// inherited
++	return FixedSizeSection<arm>::addRelocFixup(parser, reloc);
++}
+ 
+ 
+ template <typename A>
+@@ -8860,6 +8892,39 @@ bool Objc1ClassReferences<x86>::addRelocFixup(class Parser<x86>& parser, const m
+ 	return PointerToCStringSection<x86>::addRelocFixup(parser, reloc);
+ }
+ 
++
++template <>
++bool Objc1ClassReferences<arm>::addRelocFixup(class Parser<arm>& parser, const macho_relocation_info<arm::P>* reloc)
++{
++	// add implict class refs, fixups not usable yet, so look at relocations
++	assert( (reloc->r_address() & R_SCATTERED) == 0 );
++	assert( reloc->r_type() == ARM_RELOC_VANILLA );
++	assert( reloc->r_length() == 2 );
++	assert( ! reloc->r_pcrel() );
++	
++	const macho_section<P>* sect = this->machoSection();
++	Parser<arm>::SourceLocation	src;
++	uint32_t srcAddr = sect->addr() + reloc->r_address();
++	src.atom = this->findAtomByAddress(srcAddr);
++	src.offsetInAtom = srcAddr - src.atom->objectAddress();
++	Parser<arm>::TargetDesc		stringTarget;
++	const uint8_t* fixUpPtr = file().fileContent() + sect->offset() + reloc->r_address();
++	uint32_t contentValue = LittleEndian::get32(*((uint32_t*)fixUpPtr));
++	parser.findTargetFromAddressAndSectionNum(contentValue, reloc->r_symbolnum(), stringTarget);
++	
++	assert(stringTarget.atom != NULL);
++	assert(stringTarget.atom->contentType() == ld::Atom::typeCString);
++	const char* baseClassName = (char*)stringTarget.atom->rawContentPointer();
++	char* objcClassName = new char[strlen(baseClassName) + 20];
++	strcpy(objcClassName, ".objc_class_name_");
++	strcat(objcClassName, baseClassName);
++
++	parser.addFixup(src, ld::Fixup::k1of1, ld::Fixup::kindSetTargetAddress, false, objcClassName);
++
++	// inherited
++	return PointerToCStringSection<arm>::addRelocFixup(parser, reloc);
++}
++
+ #if SUPPORT_ARCH_arm64
+ template <>
+ void Section<arm64>::addLOH(class Parser<arm64>& parser, int kind, int count, const uint64_t addrs[]) {

@@ -1,0 +1,12 @@
+--- external_includes/mach-o/dyld_priv.h
++++ external_includes/mach-o/dyld_priv.h
+@@ -36,7 +36,8 @@
+ extern "C" {
+ #endif /* __cplusplus */
+ 
+-
++#define __API_UNAVAILABLE_PLATFORM_bridgeos bridgeos,unavailable
++#define __API_AVAILABLE_PLATFORM_bridgeos(x) bridgeos,introduced=x
+ 
+ //
+ // private interface between libSystem.dylib and dyld

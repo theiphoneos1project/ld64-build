@@ -1,0 +1,15 @@
+diff --git a/src/ld/OutputFile.cpp b/src/ld/OutputFile.cpp
+index 250f534..8feee4c 100644
+--- a/src/ld/OutputFile.cpp
++++ b/src/ld/OutputFile.cpp
+@@ -57,7 +57,10 @@ extern "C" {
+ 
+ #include <CommonCrypto/CommonDigest.h>
+ #include <AvailabilityMacros.h>
++
++#define PRIVATE
+ #include <System/machine/cpu_capabilities.h>
++#undef PRIVATE
+ 
+ #include "ExportsTrie.h"
+ 
