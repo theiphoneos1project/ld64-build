@@ -1,6 +1,8 @@
 name: Build ld64-objc1
 
 on:
+  push:
+    branches: [workflow-dispatch]
   workflow_dispatch:
 
 jobs:
